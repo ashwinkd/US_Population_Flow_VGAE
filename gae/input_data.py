@@ -1,7 +1,8 @@
-import numpy as np
-import sys
 import pickle as pkl
+import sys
+
 import networkx as nx
+import numpy as np
 import scipy.sparse as sp
 
 
@@ -29,13 +30,21 @@ def load_data(dataset):
     if dataset == 'citeseer':
         # Fix citeseer dataset (there are some isolated nodes in the graph)
         # Find isolated nodes, add them as zero-vecs into the right position
-        test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder)+1)
+        test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder) + 1)
         tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
-        tx_extended[test_idx_range-min(test_idx_range), :] = tx
+        tx_extended[test_idx_range - min(test_idx_range), :] = tx
         tx = tx_extended
 
     features = sp.vstack((allx, tx)).tolil()
     features[test_idx_reorder, :] = features[test_idx_range, :]
     adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
 
+    return adj, features
+
+
+def load_flow_data():
+    graph = pkl.load(open("data/ind.staten_10k.graph", 'rb'), encoding='latin1')
+    features = pkl.load(open("data/ind.staten_10k.features", 'rb'), encoding='latin1')
+
+    adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
     return adj, features

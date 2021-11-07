@@ -1,13 +1,19 @@
 from __future__ import division
 from __future__ import print_function
 
-import time
 import os
+import pickle as pkl
+import sys
+import time
+
+import networkx as nx
 
 # Train on CPU (hide GPU) due to memory constraints
 os.environ['CUDA_VISIBLE_DEVICES'] = ""
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+
+tf.disable_eager_execution()
 import numpy as np
 import scipy.sparse as sp
 
@@ -15,9 +21,19 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import average_precision_score
 
 from gae.optimizer import OptimizerAE, OptimizerVAE
-from gae.input_data import load_data
+# from gae.input_data import load_flow_data as load_data
 from gae.model import GCNModelAE, GCNModelVAE
 from gae.preprocessing import preprocess_graph, construct_feed_dict, sparse_to_tuple, mask_test_edges
+
+
+# Load data
+def load_flow_data():
+    graph = pkl.load(open("data/ind.staten_10k.graph", 'rb'), encoding='latin1')
+    features = pkl.load(open("data/ind.staten_10k.features", 'rb'), encoding='latin1')
+
+    adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
+    return adj, features
+
 
 # Settings
 flags = tf.app.flags
@@ -37,7 +53,8 @@ model_str = FLAGS.model
 dataset_str = FLAGS.dataset
 
 # Load data
-adj, features = load_data(dataset_str)
+# adj, features = load_data(dataset_str)
+adj, features = load_flow_data()
 
 # Store original adjacency matrix (without diagonal entries) for later
 adj_orig = adj
@@ -140,7 +157,6 @@ adj_label = sparse_to_tuple(adj_label)
 
 # Train model
 for epoch in range(FLAGS.epochs):
-
     t = time.time()
     # Construct feed dictionary
     feed_dict = construct_feed_dict(adj_norm, adj_label, features, placeholders)
